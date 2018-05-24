@@ -1,19 +1,21 @@
-TITIONFDSOIFJDSJFOIDSOIfdsjoif
+
 
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
 library(shinyjs)
 
-#read in the data set
 playerdata<-read.csv("NBA1617E.csv",header=TRUE)
 
 #Filter the player data so that it does not choose a player who has no free throw attempts => no free throw %
 index1 = which(((playerdata$FTA >= 1)*(playerdata$FTA<=1000))==1)
 playerdata2 = playerdata[index1,]
+
 #create a list of just the players names to be selected from later 
 PlayerNames<-playerdata2[,1]
 
+
+#  "ui file must return UI object", perform ui construction:
 dashboardPage(skin="blue",
               dashboardHeader(title="Hypothesis Testing with NBA data",titleWidth=450),
               
@@ -121,7 +123,7 @@ dashboardPage(skin="blue",
                                    numericInput("null.valNBA","Select a value for the null hypothesis. ",min = 0,max = 1,value = 0.74, step = 0.01),
                                    
                                    
-                                   #User now selects what their sample size would be ie how many shots they are simulating for the player
+                                   ###User now selects what their sample size would be ie how many shots they are simulating for the player
                                    #simulates shots based on the players actual FT%
                                    h4("Simulate your player shooting free throws and guess whether or not we can reject the null hypothesis"),
                                    numericInput("samp.sizeNBA",h4("Input the number of shots in the sample:  " ),min = 0,max = 1000,value = 5, step = 5),
@@ -129,7 +131,7 @@ dashboardPage(skin="blue",
                                    #this text output show what the proportion of free throws made is for their player 
                                    textOutput("text2NBA"),
                                    
-                                   #Conditional using checkbox if they want to see the true population proportion is for their player
+                                   #Conditional using checkbox if they want to see what the true population proportion is for their player
                                    checkboxInput("trueNBA", h6("Show the true free throw percentage")),
                                    conditionalPanel("input.trueNBA==true",
                                                     textOutput("text1NBA")
@@ -178,3 +180,4 @@ dashboardPage(skin="blue",
                 )
               )
 )
+#)

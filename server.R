@@ -1,13 +1,13 @@
 library(ggplot2)
+library(magrittr)
 library(shinyBS)
 library(shiny)
 library(shinyjs)
 
-playerdata<-read.csv("file:///C:/Users/ryan voyack/Documents/PSU (courses,etc) & Act-Sci (exams, etc)/shiny research/FreeThrows/NBA1617E.csv",header=TRUE)
+playerdata<-read.csv("NBA1617E.csv",header=TRUE)
 
-
-shinyServer(function(input, output,session) {
-  
+#  "server file must return a server function", create server:
+function(input,output,session){
   dataFilter<- reactive({
     
     games<-input$gamesplayed
@@ -56,11 +56,12 @@ shinyServer(function(input, output,session) {
     return(input$trueNBA)
   })
   
+  
   valsNBA <- reactiveValues(sim1 = 0)
   observeEvent(input$samp.sizeNBA, {
     namedata<-player.select()
     ftp = namedata$FT/namedata$FTA
-    n1 <-nNBA()
+    n1 <- nNBA()
     valsNBA$sim1 = rbinom(n = n1,size = 1, prob = ftp)
   })
   
@@ -76,12 +77,12 @@ shinyServer(function(input, output,session) {
   
   #Output text for the null hypothesis
   output$text3NBA <- renderText({
-    namedata <-player.select()
+    namedata <- player.select()
     h1 <- hNBA()
     paste("Test the hypothesis that the free throw percentage for ",namedata$Player, "is equal to",h1)
-    
-    
   })
+  
+  ####Output plot, the histogram for "filtering", part 1####
   output$histogramNBA<-renderPlot({
     validate(
       need(input$gamesplayed>0,
@@ -98,7 +99,6 @@ shinyServer(function(input, output,session) {
     #Doesn't matter for the Histogram though because the Histogram won't display the NaN's 
     #I take out the NaN's in a different part where it is needed
     for(i in 1:n){
-      
       y[i] = bballdata$FT[i]/bballdata$FTA[i]
     }
     
@@ -106,6 +106,9 @@ shinyServer(function(input, output,session) {
     par(bg = "lightsteelblue")
     hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion",col ="firebrick")
   })
+
+  
+  ####output plot of the plot in part 2, "Three proportions"####
   output$proportion2NBA <-renderPlot({
     validate(
       need(input$samp.sizeNBA>0,
@@ -124,8 +127,6 @@ shinyServer(function(input, output,session) {
     
     sim1 = valsNBA$sim1
     
-    #Find the sample proportion
-    
     for(i in 1:n1){
       if(sim1[i]==1){
         phat = phat+1
@@ -135,37 +136,57 @@ shinyServer(function(input, output,session) {
       }
     }
     phat = phat/n1
-    #Plot it
-    par(bg = "lightsteelblue")
-    plot(x=NULL,
-         y=NULL,
-         xlim=c(0, 1),
-         ylim=c(0, 1),
-         ylab = paste("Proportion"),
-         xlab =  paste("The sample proportion of shots made is  ", round(phat, digits = 2)),
-         xaxt = "n",
-         main = paste("Free Throw Proportion for ",namedata$Player)
-    )
     
-    abline(h = h3, col = "red", lwd = 3)
-    abline(h = phat, col = "green", lwd = 3)
-    if(true1 == TRUE){
-      abline(h=ftp,col = "blue", lwd =3)
+    
+    #sampling distribuion
+    phat = 0
+    phats <- c()
+    j=1
+    for(j in 1:500){
+      i=1
+      sim1=rbinom(n = n1,size = 1, prob = ftp)
+      phat=0
+      for(i in 1:n1){
+        if(sim1[i]==1){
+          phat = phat+1
+        }
+        else{
+          phat = phat
+        }
+        i=i+1
+      }
+      phat = phat/n1
+      phats[j]<-phat
+      j=j+1
     }
-    # x1 = 0:1
-    # y1 = 0:1
-    # ggplot(data.frame(x1,y1),aes(x=x1, y=y1))+
-    #   geom_line(y = h3, color = "red") +
-    #   geom_line(y = phat, color = "green")+
-    #   ylim(0,1) +
-    #   labs(title = paste("Free Throw Proportion for ",namedata$Player),y = "Proportion", x = " ", caption = paste("The sample proportion of shots made is  ", round(phat, digits = 2)))+
-    #   if(true1 == TRUE){
-    #     geom_line(y = ftp, color = "blue")
-    #   }
+    #par(bg = "lightsteelblue")
+
+    #Calculates the free throw percentages for all the players and puts it into a variable
+    #Produces NAN's for players that haven't taken any free throws
+    #Doesn't matter for the Histogram though because the Histogram won't display the NaN's 
+    #I take out the NaN's in a different part where it is needed
     
+    options(digits = 6)
+    dat <- round(playerdata$FT / playerdata$FTA, 6)
+    dat <- as.numeric(na.omit(dat))
+    temp <- data.frame(length=dat)
+    #temp <- data.frame(length=dat[which(.419474<dat & dat<1)])
+    #temp2 <- data.frame(length=dat)
+    #temp2.1 <- data.frame(length=dat[which(dat==1)])
+    #temp2.2 <- data.frame(length=dat[which(.419474>=dat)])
+    temp2 <- data.frame(length=phats)
+    temp$data <- "population" #'inner 95% of population'
+    #temp2$data <- 'outer 5% of population'
+    temp2$data <- 'sampling distribution'
+
+    data1 <- rbind(temp, temp2)
+    g <- data1 %>% ggplot(aes(length, fill=data)) + geom_density(alpha=.35) + geom_vline(aes(xintercept = h3), color="red", lwd=1) + geom_vline(aes(xintercept = phat), color="green", lwd=1) + xlim(.25,1) 
+    g + if(true1 == TRUE){geom_vline(aes(xintercept=ftp), color = "blue", lwd = 1)}else{NULL} 
     
   })
+
   
+  #### hypothesis test output in part 2####  
   output$testtableNBA <- renderTable({
     validate(
       need(input$samp.sizeNBA>0,
@@ -221,4 +242,5 @@ shinyServer(function(input, output,session) {
     
   })
   
-})
+}
+
