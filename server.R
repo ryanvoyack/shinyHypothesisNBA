@@ -107,6 +107,46 @@ function(input,output,session){
     hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion",col ="firebrick")
   })
 
+  #### making event reactive to create non changing samp dist####
+  temp2 <- eventReactive(input$howToChooseNBA, {
+    validate(
+      need(input$samp.sizeNBA>0,
+           message = "Please input a valid number of shots")
+    )
+    validate(
+      need(!is.null(input$samp.sizeNBA),
+           message = "Please input the number of shots")
+    )
+    h3<-hNBA()
+    namedata<-player.select()
+    ftp = namedata$FT/namedata$FTA
+    n1 <-nNBA()
+    true1 = truepropNBA()
+    
+    #sampling distribuion
+    phat = 0
+    phats <- c()
+    j=1
+    for(j in 1:2000){
+      i=1
+      sim1=rbinom(n = 50,size = 1, prob = ftp)
+      phat=0
+      for(i in 1:50){
+        if(sim1[i]==1){
+          phat = phat+1
+        }
+        else{
+          phat = phat
+        }
+        i=i+1
+      }
+      phat = phat/50
+      phats[j]<-phat
+      j=j+1
+    }
+    data.frame(length=phats)
+  })
+
   
   ####output plot of the plot in part 2, "Three proportions"####
   output$proportion2NBA <-renderPlot({
@@ -137,28 +177,6 @@ function(input,output,session){
     }
     phat = phat/n1
     
-    
-    #sampling distribuion
-    phat = 0
-    phats <- c()
-    j=1
-    for(j in 1:500){
-      i=1
-      sim1=rbinom(n = n1,size = 1, prob = ftp)
-      phat=0
-      for(i in 1:n1){
-        if(sim1[i]==1){
-          phat = phat+1
-        }
-        else{
-          phat = phat
-        }
-        i=i+1
-      }
-      phat = phat/n1
-      phats[j]<-phat
-      j=j+1
-    }
     #par(bg = "lightsteelblue")
 
     #Calculates the free throw percentages for all the players and puts it into a variable
@@ -166,23 +184,27 @@ function(input,output,session){
     #Doesn't matter for the Histogram though because the Histogram won't display the NaN's 
     #I take out the NaN's in a different part where it is needed
     
+    #phats <- rnorm(10000, input$samp.sizeNBA*phat, input$samp.sizeNBA*phat*(1-phat))
+    
+  
     options(digits = 6)
     dat <- round(playerdata$FT / playerdata$FTA, 6)
     dat <- as.numeric(na.omit(dat))
-    temp <- data.frame(length=dat)
+    temp <- c(dat, rep.int(0,2000-438))
+    temp <- data.frame(length=temp)
     #temp <- data.frame(length=dat[which(.419474<dat & dat<1)])
     #temp2 <- data.frame(length=dat)
     #temp2.1 <- data.frame(length=dat[which(dat==1)])
     #temp2.2 <- data.frame(length=dat[which(.419474>=dat)])
-    temp2 <- data.frame(length=phats)
+    #temp2 <- data.frame(length=phats)
+    temp2 <- temp2()
     temp$data <- "population" #'inner 95% of population'
     #temp2$data <- 'outer 5% of population'
     temp2$data <- 'sampling distribution'
-
-    data1 <- rbind(temp, temp2)
-    g <- data1 %>% ggplot(aes(length, fill=data)) + geom_density(alpha=.35) + geom_vline(aes(xintercept = h3), color="red", lwd=1) + geom_vline(aes(xintercept = phat), color="green", lwd=1) + xlim(.25,1) 
-    g + if(true1 == TRUE){geom_vline(aes(xintercept=ftp), color = "blue", lwd = 1)}else{NULL} 
     
+    data1 <- rbind(temp, temp2)
+    g <- data1 %>% ggplot(aes(length, fill=data)) + geom_density(alpha=.35) + geom_vline(aes(xintercept = h3), color="red", lwd=1) + geom_vline(aes(xintercept = min(dat[which(dat>quantile(dat,.025))])), color="black") + geom_vline(aes(xintercept = max(dat[which(dat<1)])), color="black") + geom_vline(aes(xintercept = phat), color="purple", lwd=1.33) + xlim(.25,1) 
+    g + if(true1 == TRUE){geom_vline(aes(xintercept=ftp), color = "blue", lwd = 1)}else{NULL} 
   })
 
   
