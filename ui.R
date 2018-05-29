@@ -122,7 +122,7 @@ dashboardPage(skin="blue",
                                    ),
                                    
                                    #Random button
-                                   actionButton(inputId = 'random', label = 'Random'),
+                                   actionButton(inputId = 'rand', label = 'Generate'),
                                    
                                    #The H0 value the user would like to test against
                                    numericInput("null.valNBA","Select a value for the null hypothesis. ",min = 0,max = 1,value = 0.74, step = 0.01),
@@ -131,16 +131,16 @@ dashboardPage(skin="blue",
                                    ###User now selects what their sample size would be ie how many shots they are simulating for the player
                                    #simulates shots based on the players actual FT%
                                    h4("Simulate your player shooting free throws and guess whether or not we can reject the null hypothesis"),
-                                   numericInput("samp.sizeNBA",h4("Input the number of shots in the sample:  " ),min = 0,max = 1000,value = 5, step = 5),
+                                   numericInput("samp.sizeNBA",("Input the number of shots in the sample:  " ),min = 0,max = 1000,value = 5, step = 5),
                                    
                                    #this text output show what the proportion of free throws made is for their player 
                                    textOutput("text2NBA"),
                                    
                                    #Conditional using checkbox if they want to see what the true population proportion is for their player
-                                   checkboxInput("trueNBA", h6("Show the true free throw percentage")),
-                                   conditionalPanel("input.trueNBA==true",
-                                                    textOutput("text1NBA")
-                                   ),
+                                   checkboxInput("trueNBA", h6("Plot the true free throw percentage")),
+                                   #conditionalPanel("input.trueNBA==true",
+                                   #                textOutput("text1NBA")
+                                   #),
                                    checkboxInput("iftestNBA",h6("Show Test Output")),
                                    conditionalPanel("input.iftestNBA==true",
                                                     tableOutput("testtableNBA")
@@ -156,14 +156,14 @@ dashboardPage(skin="blue",
                             column(8,
                                    plotOutput("proportion2NBA"),
                                    bsPopover(id = "proportion2NBA", title = NULL, content = "The red line shows the proportion from the null hypothesis, the green line shows the sample proporiton and the blue line shows the players actual proportion from the season", placement = "left", trigger = "hover",
-                                             options = NULL)
+                                             options = NULL),
                                    #Output some info about the graphs and the conditional part
                                    # h4("The red line shows the proportion from the null hypothesis"),
-                                   # h4("The green line shows the sample proportion"),
+                                   # h4("The purple line shows the sample proportion"),
                                    # conditionalPanel("input.true==true",
                                    #                  h4("The blue line shows the players actual free throw proportion from the 2016-17 season")
                                    # )
-                                   
+                                   textOutput("text1NBA")
                                    
                             )
                             

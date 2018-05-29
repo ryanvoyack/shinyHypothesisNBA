@@ -21,7 +21,7 @@ function(input,output,session){
     
   })
   
-  player.select <-reactive({
+  player.select <- reactive({
     #Filter the player data so that it does not choose a player who has no free throw attempts => no free throw %
     index1 = which(((playerdata$FTA >= 1)*(playerdata$FTA<=1000))==1)
     playerdata2 = playerdata[index1,]
@@ -37,7 +37,7 @@ function(input,output,session){
     }
     
     #Random Button
-    input$random
+    input$rand
     
     #If it is not random use the player that the user selected
     index<-which(playerdata2$Player == name)
@@ -73,7 +73,7 @@ function(input,output,session){
     namedata <-player.select()
     ftp = namedata$FT/namedata$FTA
     
-    paste("The free throw proportion for ",namedata$Player, "is",round(ftp,2))
+    paste("The true free throw proportion for ",namedata$Player, "is",round(ftp,2))
   })
   
   
@@ -110,8 +110,39 @@ function(input,output,session){
     hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion",col ="firebrick")
   })
 
+  #### make phat ####
+  phat <- eventReactive(input$samp.sizeNBA, {
+    validate(
+      need(input$samp.sizeNBA>0,
+           message = "Please input a valid number of shots")
+    )
+    validate(
+      need(!is.null(input$samp.sizeNBA),
+           message = "Please input the number of shots")
+    )
+    h3<-hNBA()
+    namedata<-player.select()
+    ftp = namedata$FT/namedata$FTA
+    n1 <-nNBA()
+    true1 = truepropNBA()
+    phat = 0
+    
+    sim1 = valsNBA$sim1
+    
+    for(i in 1:n1){
+      if(sim1[i]==1){
+        phat = phat+1
+      }
+      else{
+        phat = phat
+      }
+    }
+    phat = phat/n1
+  })
+
+  
   #### making event reactive to create non changing samp dist####
-  temp2 <- eventReactive(input$howToChooseNBA, {
+  temp2 <- eventReactive(input$rand, {
     validate(
       need(input$samp.sizeNBA>0,
            message = "Please input a valid number of shots")
@@ -147,6 +178,9 @@ function(input,output,session){
       phats[j]<-phat
       j=j+1
     }
+    #phats = rnorm(n=500, mean=ftp, sd=sqrt(ftp*(1-ftp)))
+    
+    
     data.frame(length=phats)
   })
 
@@ -166,20 +200,7 @@ function(input,output,session){
     ftp = namedata$FT/namedata$FTA
     n1 <-nNBA()
     true1 = truepropNBA()
-    phat = 0
-    
-    sim1 = valsNBA$sim1
-    
-    for(i in 1:n1){
-      if(sim1[i]==1){
-        phat = phat+1
-      }
-      else{
-        phat = phat
-      }
-    }
-    phat = phat/n1
-    
+
     #par(bg = "lightsteelblue")
 
     #Calculates the free throw percentages for all the players and puts it into a variable
@@ -189,7 +210,7 @@ function(input,output,session){
     
     #phats <- rnorm(10000, input$samp.sizeNBA*phat, input$samp.sizeNBA*phat*(1-phat))
     
-  
+    phat <- phat()
     options(digits = 6)
     dat <- round(playerdata$FT / playerdata$FTA, 6)
     dat <- as.numeric(na.omit(dat))
@@ -205,8 +226,15 @@ function(input,output,session){
     #temp2$data <- 'outer 5% of population'
     temp2$data <- 'sampling distribution'
     
+    stanerr1 = sqrt(h3*(1-h3)/n1)
+    z1 = (phat-h3)/stanerr1
+    z1 = round(z1, digits = 3)
+    lower=ifelse(z1<0,max(dat[which((dat-h3)/stanerr1<z1)]),max(dat[which((dat-h3)/stanerr1 < -z1)])) 
+    upper=ifelse(z1>0,min(dat[which((dat-h3)/stanerr1>z1)]),min(dat[which((dat-h3)/stanerr1 > -z1)]))
+    
     data1 <- rbind(temp, temp2)
-    g <- data1 %>% ggplot(aes(length, fill=data)) + geom_density(alpha=.35) + geom_vline(aes(xintercept = h3), color="red", lwd=1) + geom_vline(aes(xintercept = min(dat[which(dat>quantile(dat,.025))])), color="black") + geom_vline(aes(xintercept = max(dat[which(dat<1)])), color="black") + geom_vline(aes(xintercept = phat), color="purple", lwd=1.33) + xlim(.25,1) 
+    g <- data1 %>% ggplot(aes(length, fill=data)) + geom_density(alpha=.35) + geom_vline(aes(xintercept = h3), color="red", lwd=1) + geom_vline(aes(xintercept = phat), color="purple", lwd=1.33) + xlim(.25,1) + geom_vline(aes(xintercept = lower), color="black") + geom_vline(aes(xintercept = upper), color="black")
+    #g <- g + geom_vline(aes(xintercept = min(dat[which(dat>quantile(dat,.025))])), color="black") + geom_vline(aes(xintercept = max(dat[which(dat<1)])), color="black")
     g + if(true1 == TRUE){geom_vline(aes(xintercept=ftp), color = "blue", lwd = 1)}else{NULL} 
   })
 
@@ -223,23 +251,12 @@ function(input,output,session){
     ftp = namedata$FT/namedata$FTA
     sim1 = valsNBA$sim1
     n4 = nNBA()
-    phat = 0 #why are we making a new phat? this is gonna be different than whats on the graph
+    phat <- phat()
     
-    for(i in 1:n4){
-      if(sim1[i]==1){
-        phat = phat+1
-      }
-      else{
-        phat = phat
-      }
-    }
-    phat = phat/n4
-    
-    
-    # 0.14186
+
     stanerr1 = sqrt(h1*(1-h1)/n4)
     
-    z1 = ( phat- h1)/stanerr1
+    z1 = (phat- h1)/stanerr1
     z1 = round(z1, digits = 3)
     #paste(round(z1,digits = 3))
     dat <- round(playerdata$FT / playerdata$FTA, 6)
@@ -247,13 +264,12 @@ function(input,output,session){
     
     if(phat>h1){
       #p1 = pnorm(z1,lower.tail = TRUE) #wrong, we should draw from the actual population available to us 
-      p1 = (sum(dat>min(dat[which((dat-h1)/stanerr1>z1)]))/n4) # one sided probability because the distribution is not symmetric (?) #this isnt right tho im pretty sure
+      p1 = (sum(dat>min(dat[which((dat-h1)/stanerr1>z1)]))/438) # one sided probability because the distribution is not symmetric (?) #this isnt right tho im pretty sure
     }else{
-      p1 = (sum(dat<max(dat[which((dat-h1)/stanerr1<z1)]))/n4) # one sided probability because the distribution is not symmetric (?) 
+      p1 = (sum(dat<max(dat[which((dat-h1)/stanerr1<z1)]))/438) # one sided probability because the distribution is not symmetric (?) 
     }
     
-    if(input$iftestNBA)
-    {
+    if(input$iftestNBA){
       ctable = matrix(c(z1,p1),nrow=1)
       colnames(ctable) = c("z-statistic","p-value")
       ctable
