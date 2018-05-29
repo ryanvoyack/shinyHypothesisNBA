@@ -36,6 +36,9 @@ function(input,output,session){
       name = input$player
     }
     
+    #Random Button
+    input$random
+    
     #If it is not random use the player that the user selected
     index<-which(playerdata2$Player == name)
     namedata<-playerdata2[index,]

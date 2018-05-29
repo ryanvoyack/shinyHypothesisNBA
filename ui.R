@@ -41,17 +41,17 @@ dashboardPage(skin="blue",
                             #I include everthing in a column though because this way there are margins and it looks better
                             column(8,
                                    h3("About:"),
-                                   h4("In this app the goal is to learn about the reasoning of a hypothesis test about proportions "),
+                                   h4("In this app the goal is to learn about the reasoning of a hypothesis test about proportions."),
                                    h3("Background:"),
                                    #In this app you will explore data about free throw percentage for NBA players in the 2016-17 season.
-                                   h4("This app includes 2016-2017 data for the NBA regular season"),
+                                   h4("This app includes 2016-2017 data for the NBA regular season."),
                                    h3("Instructions:"),
-                                   h4("In Part 1 you will look at the distribution of all the players free throw percentages."),
-                                   h4("In Part 2 you will explore hypothesis tests about and individual player's free throw percentage"),
+                                   h4("In Part 1 you will look at the distribution of all the players' free throw percentages."),
+                                   h4("In Part 2 you will explore hypothesis tests about and individual players' free throw percentages."),
                                    
                                    br(),
                                    br(),
-                                   img(src="fthrow2.png",height = 250,width =650,algin = "middle")
+                                   img(src="fthrow2.png", height = 250, width = 650, algin = "middle")
                                    
                             )
                             
@@ -86,14 +86,16 @@ dashboardPage(skin="blue",
                                    img(src="Giannis.png",height = 219,width =300,align = "middle")
                                    
                             ),
-                            
+            
                             #Column two displays the Histogram of the distrubition of the free throw attempts
                             column(8,
                                    h1("Histogram"),
                                    
-                                   plotOutput("histogramNBA")
+                                   plotOutput("histogramNBA"),
+                                   #Add rollover for Histogram of Free Throw Proportion Plot
+                                   bsPopover(id = "histogramNBA", title = NULL, content = "This histogram filters the NBA players based on games played or free throw attempts. Changing the slider will adjust the number of players that fit the selected criteria.", placement = "left", trigger = "hover", options = NULL)
                             ),
-                            
+                           
                             #A box with information to get students thinking and transitioning into part 2
                             box(width = 12,background = "blue", h4("Try to think about what the median and mean of FT% are and what range you might expect most of the players to fall in. "))
                             
@@ -118,6 +120,9 @@ dashboardPage(skin="blue",
                                    conditionalPanel("input.howToChooseNBA == 'sel'",
                                                     selectizeInput(inputId = "player","Select your player from the drop down list below:", choices=PlayerNames, multiple=FALSE, options = list(placeholder = 'Select Your Player'),selected = NULL)
                                    ),
+                                   
+                                   #Random button
+                                   actionButton(inputId = 'random', label = 'Random'),
                                    
                                    #The H0 value the user would like to test against
                                    numericInput("null.valNBA","Select a value for the null hypothesis. ",min = 0,max = 1,value = 0.74, step = 0.01),
