@@ -129,9 +129,9 @@ function(input,output,session){
     j=1
     for(j in 1:2000){
       i=1
-      sim1=rbinom(n = 50,size = 1, prob = ftp)
+      sim1=rbinom(n = 40,size = 1, prob = ftp)
       phat=0
-      for(i in 1:50){
+      for(i in 1:40){
         if(sim1[i]==1){
           phat = phat+1
         }
@@ -140,7 +140,7 @@ function(input,output,session){
         }
         i=i+1
       }
-      phat = phat/50
+      phat = phat/40
       phats[j]<-phat
       j=j+1
     }
@@ -220,7 +220,7 @@ function(input,output,session){
     ftp = namedata$FT/namedata$FTA
     sim1 = valsNBA$sim1
     n4 = nNBA()
-    phat = 0
+    phat = 0 #why are we making a new phat? this is gonna be different than whats on the graph
     
     for(i in 1:n4){
       if(sim1[i]==1){
@@ -239,15 +239,14 @@ function(input,output,session){
     z1 = ( phat- h1)/stanerr1
     z1 = round(z1, digits = 3)
     #paste(round(z1,digits = 3))
+    dat <- round(playerdata$FT / playerdata$FTA, 6)
+    dat <- as.numeric(na.omit(dat))
     
-    if(phat<h1)
-    {
-      p1 = pnorm(z1,lower.tail = TRUE) 
-      
-    }
-    else{
-      p1 = pnorm(z1,lower.tail = FALSE) 
-      
+    if(phat>h1){
+      #p1 = pnorm(z1,lower.tail = TRUE) #wrong, we should draw from the actual population available to us 
+      p1 = (sum(dat>min(dat[which((dat-h1)/stanerr1>z1)]))/n4) # one sided probability because the distribution is not symmetric (?) #this isnt right tho im pretty sure
+    }else{
+      p1 = (sum(dat<max(dat[which((dat-h1)/stanerr1<z1)]))/n4) # one sided probability because the distribution is not symmetric (?) 
     }
     
     if(input$iftestNBA)
